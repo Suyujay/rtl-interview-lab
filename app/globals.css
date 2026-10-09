@@ -200,6 +200,16 @@ body {
   font-weight: 650;
 }
 
+.golden-pattern-table .async-fifo-golden-table {
+  table-layout: fixed;
+}
+
+.golden-pattern-table .async-fifo-golden-table th,
+.golden-pattern-table .async-fifo-golden-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 640px) {
   .elastic-buffer-flow {
     grid-template-columns: 1fr;

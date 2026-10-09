@@ -79,6 +79,7 @@ import { Progress } from '@/components/ui/progress';
 import { WaveformViewer } from '@/components/waveform-viewer';
 import { CodeEditor, ReadOnlyCodeBlock } from '@/components/code-editor';
 import { SocInterfaceGuide } from '@/components/soc-interface-guide';
+import { AsyncFifoGuide, AsyncFifoReasoning } from '@/components/async-fifo-guide';
 import { AdSenseUnit } from '@/components/adsense-unit';
 import {
   challenges,
@@ -2008,6 +2009,7 @@ function LogicBriefCard({
   challenge: Challenge;
   locale: Locale;
 }) {
+  if (challenge.id === 'cdc-async-fifo') return <AsyncFifoReasoning locale={locale} />;
   const cpuGuide = cpuCacheGuides[challenge.id];
   const keySteps = challenge.hints
     .slice(0, 2)
@@ -4391,7 +4393,7 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="lab-shell mx-auto grid max-w-[1580px] xl:grid-cols-[290px_minmax(0,1fr)_330px]">
+      <div className="lab-shell mx-auto grid max-w-[1580px] grid-cols-1 xl:grid-cols-[290px_minmax(0,1fr)_330px]">
         <aside className="border-b border-border bg-sidebar px-4 py-5 xl:min-h-[calc(100vh-65px)] xl:border-b-0 xl:border-r">
           <div className="relative mb-4">
             <Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-muted-foreground" />
@@ -5661,6 +5663,9 @@ export default function Home() {
             {socLearningAid && !dailyReviewNoAids && (
               <SocInterfaceGuide aid={socLearningAid} locale={locale} />
             )}
+            {current.id === 'cdc-async-fifo' && !dailyReviewNoAids && (
+              <AsyncFifoGuide locale={locale} />
+            )}
             {!dailyReviewNoAids && !logicUnlocked && (
               <AidUnlockCard
                 id="crystal"
@@ -5756,7 +5761,7 @@ export default function Home() {
                       : 'Open cycle-by-cycle Golden example'}
                   </summary>
                   <div className="golden-pattern-table mt-3 overflow-x-auto rounded-lg border border-cyan-200/80 dark:border-cyan-900">
-                    <table>
+                    <table className={current.id === 'cdc-async-fifo' ? 'async-fifo-golden-table' : undefined}>
                       <thead>
                         <tr>
                           {goldenPattern.columns.map((column, index) => (
