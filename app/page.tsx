@@ -1499,10 +1499,14 @@ function ProfessionCharacterSprite({
   state: 'idle' | 'attack';
 }) {
   const variant = professionCharacterVariant(profession, equipment);
+  const assetVersion =
+    profession === 'cpu' && state === 'attack' && variant === 'relic'
+      ? 'v6'
+      : 'v5';
 
   return (
     <img
-      src={`./mascot/profession-${profession}-${gender}-${state}-${variant}-v5.webp`}
+      src={`./mascot/profession-${profession}-${gender}-${state}-${variant}-${assetVersion}.webp`}
       alt=""
       width={768}
       height={768}
