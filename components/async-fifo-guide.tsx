@@ -121,15 +121,14 @@ export function AsyncFifoGuide({ locale }: { locale: Locale }) {
                 aria-hidden="true"
               >
                 <span className="h-0.5 flex-1 bg-slate-400" />
-                <span className="-ml-2 text-3xl leading-none text-slate-400">
-                  ›
-                </span>
+                <span className="h-0 w-0 border-y-[5px] border-l-[8px] border-y-transparent border-l-slate-400" />
               </div>
               <div
-                className="mt-1 text-2xl leading-none text-slate-400 sm:hidden"
+                className="mx-auto mt-1 flex h-8 w-3 flex-col items-center sm:hidden"
                 aria-hidden="true"
               >
-                ↓
+                <span className="w-0.5 flex-1 bg-slate-400" />
+                <span className="h-0 w-0 border-x-[5px] border-t-[8px] border-x-transparent border-t-slate-400" />
               </div>
             </div>
             <div>
@@ -169,17 +168,16 @@ export function AsyncFifoGuide({ locale }: { locale: Locale }) {
                 wclk
               </p>
             </div>
-            <div className="hidden items-center md:flex" aria-hidden="true">
+            <div className="hidden w-8 items-center md:flex" aria-hidden="true">
               <span className="h-0.5 flex-1 bg-slate-400" />
-              <span className="-ml-2 text-3xl leading-none text-slate-400">
-                ›
-              </span>
+              <span className="h-0 w-0 border-y-[5px] border-l-[8px] border-y-transparent border-l-slate-400" />
             </div>
             <div
-              className="text-center text-2xl leading-none text-slate-400 md:hidden"
+              className="mx-auto flex h-8 w-3 flex-col items-center md:hidden"
               aria-hidden="true"
             >
-              ↓
+              <span className="w-0.5 flex-1 bg-slate-400" />
+              <span className="h-0 w-0 border-x-[5px] border-t-[8px] border-x-transparent border-t-slate-400" />
             </div>
             <div className="rounded-xl border border-purple-700/80 bg-purple-950/10 p-3">
               <p className="mb-2 text-xs font-semibold text-purple-200">
@@ -195,17 +193,19 @@ export function AsyncFifoGuide({ locale }: { locale: Locale }) {
                     rclk
                   </p>
                 </div>
-                <div className="hidden items-center sm:flex" aria-hidden="true">
-                  <span className="h-0.5 flex-1 bg-slate-400" />
-                  <span className="-ml-2 text-3xl leading-none text-slate-400">
-                    ›
-                  </span>
-                </div>
                 <div
-                  className="text-center text-2xl leading-none text-slate-400 sm:hidden"
+                  className="hidden w-8 items-center sm:flex"
                   aria-hidden="true"
                 >
-                  ↓
+                  <span className="h-0.5 flex-1 bg-slate-400" />
+                  <span className="h-0 w-0 border-y-[5px] border-l-[8px] border-y-transparent border-l-slate-400" />
+                </div>
+                <div
+                  className="mx-auto flex h-8 w-3 flex-col items-center sm:hidden"
+                  aria-hidden="true"
+                >
+                  <span className="w-0.5 flex-1 bg-slate-400" />
+                  <span className="h-0 w-0 border-x-[5px] border-t-[8px] border-x-transparent border-t-slate-400" />
                 </div>
                 <div>
                   <div className="rounded-xl border-2 border-purple-400 bg-purple-950/30 p-3 text-center">
