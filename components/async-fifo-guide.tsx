@@ -105,35 +105,42 @@ export function AsyncFifoGuide({ locale }: { locale: Locale }) {
               ? '① Next Gray 是 wire，來源 Gray 才是 FF'
               : '1. Next Gray is a wire; source Gray is a flop'}
           </h3>
-          <div className="mt-3 overflow-x-auto pb-1">
-            <div className="grid min-w-[610px] grid-cols-[210px_1fr_210px] items-center gap-3">
-              <div className="rounded-2xl border-2 border-slate-500 bg-slate-900 px-4 py-5 text-center">
-                <p className="text-base font-semibold">
-                  {zh ? 'Gray 計算邏輯' : 'Gray calculation'}
-                </p>
-                <p className="mt-1 text-sm text-slate-300">XOR / Shift</p>
+          <div className="mt-3 grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(5rem,0.7fr)_minmax(0,1fr)]">
+            <div className="rounded-2xl border-2 border-slate-500 bg-slate-900 px-3 py-4 text-center">
+              <p className="text-base font-semibold">
+                {zh ? 'Gray 計算邏輯' : 'Gray calculation'}
+              </p>
+              <p className="mt-1 text-sm text-slate-300">XOR / Shift</p>
+            </div>
+            <div className="min-w-0 text-center">
+              <code className="break-all text-[11px] font-semibold text-amber-300 sm:break-normal">
+                wire w_next_gpointer
+              </code>
+              <div
+                className="mt-2 hidden items-center sm:flex"
+                aria-hidden="true"
+              >
+                <span className="h-0.5 flex-1 bg-slate-400" />
+                <span className="-ml-2 text-3xl leading-none text-slate-400">
+                  ›
+                </span>
               </div>
-              <div className="text-center">
-                <code className="text-xs font-semibold text-amber-300">
-                  wire w_next_gpointer
-                </code>
-                <div className="mt-2 flex items-center" aria-hidden="true">
-                  <span className="h-0.5 flex-1 bg-slate-400" />
-                  <span className="-ml-2 text-3xl leading-none text-slate-400">
-                    ›
-                  </span>
-                </div>
+              <div
+                className="mt-1 text-2xl leading-none text-slate-400 sm:hidden"
+                aria-hidden="true"
+              >
+                ↓
               </div>
-              <div>
-                <div className="rounded-2xl border-2 border-cyan-500 bg-cyan-950/40 px-4 py-5 text-center">
-                  <code className="text-base font-semibold">w_gpointer</code>
-                  <p className="mt-1 text-sm text-slate-200">D Flip-Flops</p>
-                </div>
-                <div className="mx-auto h-5 w-0.5 bg-cyan-400" />
-                <p className="text-center font-mono text-xs text-cyan-200">
-                  wclk
-                </p>
+            </div>
+            <div>
+              <div className="rounded-2xl border-2 border-cyan-500 bg-cyan-950/40 px-3 py-4 text-center">
+                <code className="text-base font-semibold">w_gpointer</code>
+                <p className="mt-1 text-sm text-slate-200">D Flip-Flops</p>
               </div>
+              <div className="mx-auto h-5 w-0.5 bg-cyan-400" />
+              <p className="text-center font-mono text-xs text-cyan-200">
+                wclk
+              </p>
             </div>
           </div>
           <figcaption className="mt-2 text-xs leading-5 text-slate-300">
@@ -149,52 +156,66 @@ export function AsyncFifoGuide({ locale }: { locale: Locale }) {
               ? '② 跨過 domain 後的兩顆 FF 才叫 2FF'
               : '2. The two destination flops form the 2FF synchronizer'}
           </h3>
-          <div className="mt-3 overflow-x-auto pb-1">
-            <div className="relative grid min-w-[660px] grid-cols-[180px_1fr_180px_1fr_180px] items-center gap-2 rounded-xl border border-slate-700 px-3 pb-4 pt-10">
-              <span className="absolute left-3 top-2 text-xs font-semibold text-cyan-200">
+          <div className="mt-3 grid grid-cols-1 items-center gap-2 md:grid-cols-[minmax(0,0.8fr)_auto_minmax(0,1.6fr)]">
+            <div className="rounded-xl border border-cyan-800/80 bg-cyan-950/10 p-3">
+              <p className="mb-2 text-xs font-semibold text-cyan-200">
                 Write Domain
+              </p>
+              <div className="rounded-xl border-2 border-slate-500 bg-slate-900 p-3 text-center">
+                <code className="text-sm font-semibold">w_gpointer</code>
+                <p className="mt-1 text-xs">Source FF</p>
+              </div>
+              <p className="mt-2 text-center font-mono text-xs text-cyan-200">
+                wclk
+              </p>
+            </div>
+            <div className="hidden items-center md:flex" aria-hidden="true">
+              <span className="h-0.5 flex-1 bg-slate-400" />
+              <span className="-ml-2 text-3xl leading-none text-slate-400">
+                ›
               </span>
-              <span className="absolute left-[31%] top-2 border-l border-dashed border-purple-400 pl-3 text-xs font-semibold text-purple-200">
-                Read Domain
-              </span>
-              <div>
-                <div className="rounded-xl border-2 border-slate-500 bg-slate-900 p-3 text-center">
-                  <code className="text-sm font-semibold">w_gpointer</code>
-                  <p className="mt-1 text-xs">Source FF</p>
+            </div>
+            <div
+              className="text-center text-2xl leading-none text-slate-400 md:hidden"
+              aria-hidden="true"
+            >
+              ↓
+            </div>
+            <div className="rounded-xl border border-purple-700/80 bg-purple-950/10 p-3">
+              <p className="mb-2 text-xs font-semibold text-purple-200">
+                Read Domain · 2FF Synchronizer
+              </p>
+              <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+                <div>
+                  <div className="rounded-xl border-2 border-purple-400 bg-purple-950/30 p-3 text-center">
+                    <code className="text-sm font-semibold">rq1_wgray</code>
+                    <p className="mt-1 text-xs">FF1</p>
+                  </div>
+                  <p className="mt-2 text-center font-mono text-xs text-purple-200">
+                    rclk
+                  </p>
                 </div>
-                <p className="mt-2 text-center font-mono text-xs text-cyan-200">
-                  wclk
-                </p>
-              </div>
-              <div className="flex items-center" aria-hidden="true">
-                <span className="h-0.5 flex-1 bg-slate-400" />
-                <span className="-ml-2 text-3xl leading-none text-slate-400">
-                  ›
-                </span>
-              </div>
-              <div>
-                <div className="rounded-xl border-2 border-purple-400 bg-purple-950/30 p-3 text-center">
-                  <code className="text-sm font-semibold">rq1_wgray</code>
-                  <p className="mt-1 text-xs">FF1</p>
+                <div className="hidden items-center sm:flex" aria-hidden="true">
+                  <span className="h-0.5 flex-1 bg-slate-400" />
+                  <span className="-ml-2 text-3xl leading-none text-slate-400">
+                    ›
+                  </span>
                 </div>
-                <p className="mt-2 text-center font-mono text-xs text-purple-200">
-                  rclk
-                </p>
-              </div>
-              <div className="flex items-center" aria-hidden="true">
-                <span className="h-0.5 flex-1 bg-slate-400" />
-                <span className="-ml-2 text-3xl leading-none text-slate-400">
-                  ›
-                </span>
-              </div>
-              <div>
-                <div className="rounded-xl border-2 border-purple-400 bg-purple-950/30 p-3 text-center">
-                  <code className="text-sm font-semibold">rq2_wgray</code>
-                  <p className="mt-1 text-xs">FF2</p>
+                <div
+                  className="text-center text-2xl leading-none text-slate-400 sm:hidden"
+                  aria-hidden="true"
+                >
+                  ↓
                 </div>
-                <p className="mt-2 text-center font-mono text-xs text-purple-200">
-                  rclk
-                </p>
+                <div>
+                  <div className="rounded-xl border-2 border-purple-400 bg-purple-950/30 p-3 text-center">
+                    <code className="text-sm font-semibold">rq2_wgray</code>
+                    <p className="mt-1 text-xs">FF2</p>
+                  </div>
+                  <p className="mt-2 text-center font-mono text-xs text-purple-200">
+                    rclk
+                  </p>
+                </div>
               </div>
             </div>
           </div>
