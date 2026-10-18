@@ -1499,14 +1499,14 @@ function ProfessionCharacterSprite({
   state: 'idle' | 'attack';
 }) {
   const variant = professionCharacterVariant(profession, equipment);
-  const assetVersion =
+  const spriteSource =
     profession === 'cpu' && state === 'attack' && variant === 'relic'
-      ? 'v6'
-      : 'v5';
+      ? `./mascot/profession-cpu-${gender}-attack-relic-v6.webp`
+      : `./mascot/profession-${profession}-${gender}-${state}-${variant}-v5.webp`;
 
   return (
     <img
-      src={`./mascot/profession-${profession}-${gender}-${state}-${variant}-${assetVersion}.webp`}
+      src={spriteSource}
       alt=""
       width={768}
       height={768}
