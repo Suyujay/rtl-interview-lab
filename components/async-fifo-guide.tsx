@@ -1,394 +1,386 @@
-import { Fragment } from 'react';
+import type { ReactNode } from 'react';
 import { localize, type Locale } from '@/lib/challenges';
 
 const ports = [
   [
     'wclk / rclk',
-    'input · 1 / 1',
-    '寫入／讀取 clock，彼此沒有固定相位關係。',
-    'Write/read clocks with no fixed phase relationship.',
+    'input',
+    '彼此獨立的寫入／讀取 clock。',
+    'Independent write/read clocks.',
   ],
   [
     'wrst_n / rrst_n',
-    'input · 1 / 1',
-    '各 domain 低有效 reset；本題以共同 flush 初始化，不測單側獨立重啟。',
-    'Local active-low resets. This lab uses a coordinated flush, not independent one-sided restart.',
+    'input',
+    '各 domain 的低有效 reset；本題兩側一起 flush。',
+    'Local active-low resets; this lab flushes both sides together.',
   ],
   [
     'w_en / wdata',
-    'input · 1 / DATA_WIDTH',
-    '在 wclk 上升沿前穩定；只有 !full 時接受。',
-    'Stable before rising wclk; accepted only when !full.',
+    'input',
+    'wclk 邊緣前有效，且 !full 才接受。',
+    'Accepted at wclk only when !full.',
   ],
   [
     'full',
-    'output · 1',
-    'wclk domain 註冊；邊緣前為 1 就拒絕本次 write。',
-    'Registered in wclk; pre-edge 1 rejects the write.',
+    'output',
+    'wclk domain 的註冊旗標；為 1 就拒絕 write。',
+    'Registered wclk flag; 1 rejects writes.',
   ],
   [
     'r_en',
-    'input · 1',
-    '在 rclk 上升沿前穩定；只有 !empty 時接受。',
-    'Stable before rising rclk; accepted only when !empty.',
+    'input',
+    'rclk 邊緣前有效，且 !empty 才接受。',
+    'Accepted at rclk only when !empty.',
   ],
   [
     'rdata',
-    'output · DATA_WIDTH',
-    '接受 read 的上升沿後更新；否則保持。不是看到 !empty 就自動出資料。',
-    'Updates after an accepted read edge; otherwise holds. !empty alone does not expose a new word.',
+    'output',
+    '合法 read 後才更新，其他時間保持。',
+    'Updates only after an accepted read; otherwise holds.',
   ],
   [
     'empty',
-    'output · 1',
-    'rclk domain 註冊；邊緣前為 1 就拒絕本次 read。',
-    'Registered in rclk; pre-edge 1 rejects the read.',
+    'output',
+    'rclk domain 的註冊旗標；為 1 就拒絕 read。',
+    'Registered rclk flag; 1 rejects reads.',
   ],
-];
+] as const;
+
+const roleRows = [
+  [
+    'w_next_bpointer',
+    'wire',
+    '組合邏輯',
+    'Combinational',
+    '下一個 binary 值',
+    'Next binary value',
+  ],
+  [
+    'w_next_gpointer',
+    'wire',
+    '組合邏輯',
+    'Combinational',
+    '下一個 Gray 值',
+    'Next Gray value',
+  ],
+  [
+    'w_bpointer / w_gpointer',
+    'reg',
+    'wclk FF',
+    'wclk flops',
+    '來源端正式狀態',
+    'Registered source state',
+  ],
+  [
+    'rq1_wgray / rq2_wgray',
+    'reg',
+    'rclk FF1 / FF2',
+    'rclk FF1 / FF2',
+    '真正的 2FF synchronizer',
+    'The actual 2FF synchronizer',
+  ],
+] as const;
+
+function ClockBadge({
+  children,
+  tone,
+}: {
+  children: ReactNode;
+  tone: 'comb' | 'write' | 'read';
+}) {
+  const toneClass =
+    tone === 'comb'
+      ? 'border-amber-400/60 bg-amber-500/10 text-amber-800 dark:text-amber-200'
+      : tone === 'write'
+        ? 'border-cyan-400/60 bg-cyan-500/10 text-cyan-800 dark:text-cyan-200'
+        : 'border-purple-400/60 bg-purple-500/10 text-purple-800 dark:text-purple-200';
+  return (
+    <span
+      className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${toneClass}`}
+    >
+      {children}
+    </span>
+  );
+}
 
 export function AsyncFifoGuide({ locale }: { locale: Locale }) {
   const zh = locale === 'zh';
   return (
     <section
       className="async-fifo-guide mt-4 min-w-0 border-t border-border pt-4"
-      aria-label={
-        zh ? 'Async FIFO 架構與介面' : 'Async FIFO architecture and interface'
-      }
+      aria-label={zh ? 'Async FIFO 圖解' : 'Async FIFO visual guide'}
     >
-      <style>{`.async-fifo-guide{container-type:inline-size}.fifo-compact{display:none}@container (max-width:680px){.fifo-wide{display:none}.fifo-compact{display:grid}}`}</style>
       <h2 className="text-base font-semibold">
         {zh
-          ? '先看架構：資料走 memory，進度走同步器'
-          : 'Architecture: data through memory, progress through synchronizers'}
+          ? '先分清三種角色：算下一步、記住狀態、跨時脈同步'
+          : 'Three roles: calculate next, store state, synchronize'}
       </h2>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
         {zh
-          ? '這不是兩個 clock 共用一個 count。每側只改自己的 pointer；同步過來的是對方「已完成多少」的保守進度。基本架構與介面不需要解鎖。'
-          : 'There is no shared two-clock count. Each side owns its pointer and sees a delayed view of remote progress. The basic architecture and interface require no unlock.'}
+          ? '最容易混淆的地方不是 Gray 公式，而是把 wire、來源端 FF 與目的端 2FF 當成同一件事。先看一條 write pointer 如何走到 read domain。'
+          : 'The common mistake is treating a wire, source flops, and destination 2FF as the same object. Trace one write pointer into the read domain first.'}
       </p>
-      <figure className="mt-3 overflow-x-auto rounded-xl border border-border bg-muted/30 p-3">
-        <svg
-          viewBox="0 0 880 420"
-          className="fifo-wide w-full"
-          role="img"
-          aria-labelledby="fifo-architecture-title fifo-architecture-desc"
-        >
-          <title id="fifo-architecture-title">
-            {zh
-              ? '雙時脈 FIFO：兩個 pointer domain 與共享 memory'
-              : 'Dual-clock FIFO: two pointer domains and shared memory'}
-          </title>
-          <desc id="fifo-architecture-desc">
-            {zh
-              ? 'wdata 寫入雙埠 memory，rdata 在 read clock 註冊。wgray 經 read clock 的兩級同步器送往 empty 比較器；rgray 經 write clock 的兩級同步器送往 full 比較器。'
-              : 'wdata enters dual-port memory; rdata registers on the read clock. wgray crosses two rclk registers to empty logic; rgray crosses two wclk registers to full logic.'}
-          </desc>
-          <defs>
-            <marker
-              id="fifo-arrow"
-              viewBox="0 0 10 10"
-              refX="9"
-              refY="5"
-              markerWidth="7"
-              markerHeight="7"
-              orient="auto-start-reverse"
-            >
-              <path d="M0 0L10 5L0 10Z" fill="currentColor" />
-            </marker>
-          </defs>
-          <g
-            fontFamily="ui-monospace, monospace"
-            fontSize="15"
-            fill="currentColor"
-          >
-            <rect
-              x="12"
-              y="14"
-              width="296"
-              height="386"
-              rx="16"
-              fill="#06b6d410"
-              stroke="#0891b2"
-            />
-            <rect
-              x="572"
-              y="14"
-              width="296"
-              height="386"
-              rx="16"
-              fill="#a855f710"
-              stroke="#a855f7"
-            />
-            <text x="32" y="44" fontSize="19" fontWeight="700">
-              WRITE · wclk
-            </text>
-            <text x="592" y="44" fontSize="19" fontWeight="700">
-              READ · rclk
-            </text>
-            <g fill="none" stroke="currentColor" opacity=".65">
-              <rect x="34" y="62" width="252" height="66" rx="8" />
-              <rect x="594" y="62" width="252" height="66" rx="8" />
-              <rect x="34" y="264" width="252" height="64" rx="8" />
-              <rect x="594" y="180" width="252" height="64" rx="8" />
-              <rect x="34" y="344" width="252" height="38" rx="8" />
-              <rect x="594" y="344" width="252" height="38" rx="8" />
-              <rect x="336" y="62" width="208" height="66" rx="8" />
-            </g>
-            <text x="48" y="87">
-              w_en &amp;&amp; !full
-            </text>
-            <text x="48" y="112">
-              mem[wbin[1:0]] ← wdata
-            </text>
-            <text x="608" y="87">
-              r_en &amp;&amp; !empty
-            </text>
-            <text x="608" y="112">
-              rdata ← mem[rbin[1:0]]
-            </text>
-            <text x="360" y="88" fontWeight="700">
-              4 × DATA_WIDTH
-            </text>
-            <text x="358" y="113">
-              dual-port memory
-            </text>
-            <text x="35" y="166">
-              wbin[2:0] → wgray[2:0]
-            </text>
-            <text x="595" y="166">
-              rbin[2:0] → rgray[2:0]
-            </text>
-            <text x="608" y="206">
-              [FF1] → [FF2]
-            </text>
-            <text x="608" y="231">
-              rclk → rq2_wgray
-            </text>
-            <text x="48" y="290">
-              [FF1] → [FF2]
-            </text>
-            <text x="48" y="315">
-              wclk → wq2_rgray
-            </text>
-            <text x="48" y="369">
-              wgray_next → full FF
-            </text>
-            <text x="608" y="369">
-              rgray_next → empty FF
-            </text>
-            <g
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              markerEnd="url(#fifo-arrow)"
-            >
-              <path d="M286 95H336" />
-              <path d="M544 95H594" />
-              <path d="M270 164H345V205H590" />
-              <path d="M600 168H535V286H290" />
-              <path d="M160 328V340" />
-              <path d="M720 244V340" />
-            </g>
-            <text x="360" y="194" fontSize="13">
-              wgray → rclk 2FF
-            </text>
-            <text x="356" y="276" fontSize="13">
-              rgray → wclk 2FF
-            </text>
-          </g>
-        </svg>
-        <div
-          className="fifo-compact gap-2 text-sm leading-6"
-          role="group"
-          aria-label={
-            zh
-              ? '窄版雙時脈 FIFO 架構圖'
-              : 'Compact dual-clock FIFO architecture'
-          }
-        >
-          <div className="rounded-lg border border-cyan-500/50 bg-cyan-500/5 p-3">
-            <p className="font-semibold">WRITE · wclk</p>
-            <p>
-              <code>w_en &amp;&amp; !full</code> →{' '}
-              {zh ? '接受寫入' : 'accept write'}
-            </p>
-            <p>
-              <code>wdata → mem[wbin[1:0]]</code>
-            </p>
-            <p>
-              <code>wbin[2:0] → wgray[2:0]</code>
-            </p>
-          </div>
-          <p className="text-center font-semibold" aria-hidden="true">
-            ↓
-          </p>
-          <div className="rounded-lg border border-border bg-background p-3 text-center">
-            <p className="font-semibold">4 × DATA_WIDTH · dual-port memory</p>
-            <p className="text-muted-foreground">
+
+      <figure className="mt-3 rounded-xl border border-border bg-muted/20 p-3 sm:p-4">
+        <div className="grid items-stretch gap-2 lg:grid-cols-[1fr_auto_1fr_auto_1fr]">
+          <article className="rounded-lg border border-amber-400/50 bg-background p-3">
+            <ClockBadge tone="comb">
+              {zh ? '組合邏輯 · 無 clock' : 'Combinational · no clock'}
+            </ClockBadge>
+            <code className="mt-3 block text-sm font-semibold">
+              w_next_bpointer
+            </code>
+            <code className="mt-1 block text-sm font-semibold">
+              w_next_gpointer
+            </code>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
               {zh
-                ? 'wclk 寫入端口 ／ rclk 讀取端口'
-                : 'wclk write port / rclk read port'}
+                ? 'wire：只算「下一個值」，不記住任何東西。'
+                : 'wire: computes the next value and stores nothing.'}
             </p>
+          </article>
+          <div
+            className="grid place-items-center text-xl text-muted-foreground max-lg:rotate-90"
+            aria-hidden="true"
+          >
+            →
           </div>
-          <p className="text-center font-semibold" aria-hidden="true">
-            ↓
-          </p>
-          <div className="rounded-lg border border-purple-500/50 bg-purple-500/5 p-3">
-            <p className="font-semibold">READ · rclk</p>
-            <p>
-              <code>r_en &amp;&amp; !empty</code> →{' '}
-              {zh ? '接受讀取' : 'accept read'}
+          <article className="rounded-lg border border-cyan-400/50 bg-background p-3">
+            <ClockBadge tone="write">wclk</ClockBadge>
+            <code className="mt-3 block text-sm font-semibold">
+              w_bpointer FF
+            </code>
+            <code className="mt-1 block text-sm font-semibold">
+              w_gpointer FF
+            </code>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              {zh
+                ? 'reg：來源端在 wclk 上升沿正式保存。'
+                : 'reg: source state captured on rising wclk.'}
             </p>
-            <p>
-              <code>mem[rbin[1:0]] → rdata FF</code>
-            </p>
-            <p>
-              <code>rbin[2:0] → rgray[2:0]</code>
-            </p>
+          </article>
+          <div
+            className="grid place-items-center text-xl text-muted-foreground max-lg:rotate-90"
+            aria-hidden="true"
+          >
+            →
           </div>
-          <div className="mt-2 rounded-lg border border-border p-3">
-            <p className="font-semibold">
-              {zh ? '兩條獨立的進度回傳路徑' : 'Two independent progress paths'}
+          <article className="rounded-lg border border-purple-400/50 bg-background p-3">
+            <ClockBadge tone="read">rclk</ClockBadge>
+            <code className="mt-3 block text-sm font-semibold">
+              rq1_wgray FF1
+            </code>
+            <code className="mt-1 block text-sm font-semibold">
+              rq2_wgray FF2
+            </code>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              {zh
+                ? '這兩級才叫 2FF Synchronizer。'
+                : 'These two stages are the 2FF synchronizer.'}
             </p>
-            <p className="mt-2">
-              <code>wgray → rclk FF1 → FF2</code>
-              <br />+ <code>rgray_next → empty FF</code>
-            </p>
-            <p className="mt-2">
-              <code>rgray → wclk FF1 → FF2</code>
-              <br />+ <code>wgray_next → full FF</code>
-            </p>
-          </div>
+          </article>
         </div>
-        <figcaption className="mt-2 text-xs leading-5 text-muted-foreground">
+        <figcaption className="mt-3 rounded-lg bg-background px-3 py-2 text-xs leading-5 text-muted-foreground">
           {zh
-            ? '圖中 [2:0]／[1:0] 對應預設深度 4。資料不逐 bit 經 2FF；資料保存在 memory，Gray pointer 控制何時能安全讀寫。兩個比較器都只能使用本地暫存器與同步器第二級。'
-            : 'The [2:0]/[1:0] widths are for depth 4. Data bits do not pass through 2FF chains: memory holds data while Gray pointers govern safe access. Comparators use only local state and the second synchronizer stage.'}
+            ? 'ADDR_WIDTH=2 時每個 pointer 是 3 bits：w_gpointer 是 3 個來源 FF；rq1_wgray＋rq2_wgray 是 6 個同步 FF。Read → Write 方向還會有另一組 6 個 FF。'
+            : 'With ADDR_WIDTH=2, each pointer is 3 bits: w_gpointer uses three source flops, while rq1_wgray plus rq2_wgray use six synchronizer flops. Read-to-write needs another six.'}
         </figcaption>
       </figure>
-      <details className="mt-3 rounded-xl border border-border p-3" open>
+
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        <article className="rounded-xl border border-border bg-background p-3">
+          <h3 className="text-sm font-semibold">
+            {zh ? '① wire 只負責計算' : '1. The wire only calculates'}
+          </h3>
+          <pre className="mt-2 overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs leading-5 text-slate-100">
+            <code>{`wire [ADDR_WIDTH:0] w_next_gpointer;
+assign w_next_gpointer =
+    (w_next_bpointer >> 1) ^ w_next_bpointer;`}</code>
+          </pre>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+            {zh
+              ? '沒有 posedge，所以不會因為這個宣告額外產生 FF。'
+              : 'There is no posedge, so this declaration does not add flops.'}
+          </p>
+        </article>
+        <article className="rounded-xl border border-border bg-background p-3">
+          <h3 className="text-sm font-semibold">
+            {zh
+              ? '② 來源先註冊，目的端再 2FF'
+              : '2. Register at source, then use destination 2FF'}
+          </h3>
+          <pre className="mt-2 overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs leading-5 text-slate-100">
+            <code>{`// source: wclk
+w_gpointer <= w_next_gpointer;
+
+// destination: rclk
+rq1_wgray <= w_gpointer;
+rq2_wgray <= rq1_wgray;`}</code>
+          </pre>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+            {zh
+              ? '跨域的是來源端已註冊的 w_gpointer，不是組合輸出 w_next_gpointer。'
+              : 'Cross the registered w_gpointer, never combinational w_next_gpointer.'}
+          </p>
+        </article>
+      </div>
+
+      <div className="mt-3 overflow-x-auto rounded-xl border border-border">
+        <table className="w-full min-w-[620px] text-left text-xs">
+          <thead className="bg-muted/60">
+            <tr>
+              <th className="p-2.5">Signal</th>
+              <th className="p-2.5">Verilog</th>
+              <th className="p-2.5">{zh ? '硬體' : 'Hardware'}</th>
+              <th className="p-2.5">{zh ? '角色' : 'Role'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {roleRows.map(
+              ([signal, kind, zhHardware, enHardware, zhRole, enRole]) => (
+                <tr key={signal} className="border-t border-border">
+                  <td className="p-2.5">
+                    <code>{signal}</code>
+                  </td>
+                  <td className="p-2.5 font-semibold">{kind}</td>
+                  <td className="p-2.5">{zh ? zhHardware : enHardware}</td>
+                  <td className="p-2.5 text-muted-foreground">
+                    {zh ? zhRole : enRole}
+                  </td>
+                </tr>
+              ),
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="mt-2 text-xs leading-5 text-muted-foreground">
+        {zh
+          ? '補充：reg 只是 Verilog 的變數型態，不代表一定是 FF；要看它是否在 always @(posedge ...) 中更新。本題的 pointer 與 synchronizer reg 都在 clock edge 更新，所以才會合成 FF。'
+          : 'Note: reg is a Verilog variable type, not an automatic flip-flop. It becomes a flip-flop here because the pointer and synchronizer registers are updated inside always @(posedge ...).'}
+      </p>
+
+      <aside className="mt-3 rounded-xl border border-rose-300/60 bg-rose-500/5 p-3 text-sm leading-6">
+        <strong>
+          {zh
+            ? '為什麼不能直接同步 w_next_gpointer？'
+            : 'Why not synchronize w_next_gpointer directly?'}
+        </strong>
+        <p className="mt-1 text-muted-foreground">
+          {zh
+            ? '它是組合邏輯輸出，切換期間可能出現 glitch。Gray code 保證相鄰「合法值」只差一個 bit，不保證組合閘的瞬間波形沒有 glitch。先用 wclk 註冊成 w_gpointer，再跨到 rclk。'
+            : 'It is a combinational output and may glitch during transitions. Gray code constrains adjacent legal values, not every transient gate waveform. Register w_gpointer on wclk before crossing to rclk.'}
+        </p>
+      </aside>
+
+      <details className="mt-3 rounded-xl border border-border p-3">
         <summary className="cursor-pointer text-sm font-semibold">
-          {zh ? '介面逐項說明' : 'Port-by-port contract'}
+          {zh
+            ? '需要時再看：七個外部腳位'
+            : 'Open when needed: seven external ports'}
         </summary>
-        <dl className="mt-3 space-y-3">
-          {ports.map(([name, width, chinese, english]) => (
-            <div
-              key={name}
-              className="border-t border-border pt-3 first:border-0 first:pt-0"
-            >
+        <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+          {ports.map(([name, direction, chinese, english]) => (
+            <div key={name} className="rounded-lg bg-muted/30 p-3">
               <dt className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                 <code>{name}</code>
                 <span className="text-xs font-normal text-muted-foreground">
-                  {width}
+                  {direction}
                 </span>
               </dt>
-              <dd className="mt-1 text-sm leading-6 text-muted-foreground">
+              <dd className="mt-1 text-xs leading-5 text-muted-foreground">
                 {zh ? chinese : english}
               </dd>
             </div>
           ))}
         </dl>
       </details>
-      <div className="mt-3 rounded-xl border border-border p-3 text-sm leading-6">
-        <h3 className="font-semibold">
-          {zh
-            ? '從這三件事開始，不用先背 full 公式'
-            : 'Start here before memorizing the full equation'}
-        </h3>
-        <ol className="mt-2 list-decimal space-y-2 pl-5">
-          <li>
-            {zh
-              ? '先畫四格 memory，列出 wbin／wgray、rbin／rgray 及兩側各兩級同步器。每個 reg 標記由哪個 clock 更新。'
-              : 'Draw four memory slots. List wbin/wgray, rbin/rgray and two remote-pointer stages per side. Label the clock that owns each register.'}
-          </li>
-          <li>
-            {zh
-              ? '先做接受條件與 memory 存取：寫滿不能寫、讀空不能讀；接受後才推進 pointer，rdata 只有合法 read 才更新。'
-              : 'Define acceptance and memory access first. Reject writes while full and reads while empty. Advance pointers only after acceptance; update rdata only on accepted reads.'}
-          </li>
-          <li>
-            {zh
-              ? '再做 Gray、2FF 與本地旗標。先手推寫一筆、等 empty 解除、讀一筆，再測四筆滿載與繞回。進階公式與逐拍推演可在水晶／Golden 中查看。'
-              : 'Then add Gray conversion, 2FF chains and local flags. Trace one write, wait for empty to release, then read once. Next test all four entries and wrap. The reasoning card and Golden trace provide the detailed derivation.'}
-          </li>
-        </ol>
-      </div>
     </section>
   );
 }
 
 export function AsyncFifoReasoning({ locale }: { locale: Locale }) {
-  const items = [
+  const zh = locale === 'zh';
+  const steps = [
     {
-      title: { zh: '為什麼是 3-bit pointer？', en: 'Why a 3-bit pointer?' },
-      body: {
-        zh: '四格 memory 只需地址 00、01、10、11，但寫四筆後地址回到 00，不能誤認為空。wbin 從 000 到 100，最高 bit 記錄繞回；binary 只有低兩個 bits 用來定址。',
-        en: 'Four slots need addresses 00, 01, 10, 11. After four writes the address returns to 00, but the FIFO is full, not empty. wbin goes from 000 to 100; the extra bit records wrap.',
+      title: {
+        zh: '地址為什麼 2 bits，pointer 卻是 3 bits？',
+        en: 'Why a 2-bit address but a 3-bit pointer?',
       },
-    },
-    {
-      title: { zh: 'binary 與 Gray 各做什麼？', en: 'Binary versus Gray' },
       body: {
-        zh: '3-bit binary 000→001→010→011→100；對應 Gray 000→001→011→010→110。Gray=(binary>>1)^binary。來源註冊值每次合法前進只改一個 bit；目的端較慢時可以跳過中間值，不能要求同步後每拍只改一 bit。',
-        en: 'Binary 000→001→010→011→100 maps to Gray 000→001→011→010→110 using Gray=(binary>>1)^binary. Each source increment changes one bit; a slower destination may skip values, so synchronized samples can differ in multiple bits.',
+        zh: '低 2 bits 選四格 memory；最高 bit 記住是否繞回。地址同樣回到 00 時，wrap bit 可分辨「追上＝空」與「領先一圈＝滿」。',
+        en: 'The low two bits select four memory entries. The extra bit records wrap, distinguishing caught-up empty from one-lap-ahead full.',
       },
+      visual: '00 → 01 → 10 → 11 → 1|00',
     },
     {
       title: {
-        zh: 'full 為何反相最高兩個 bits？',
-        en: 'Why invert the top two Gray bits for full?',
+        zh: '資料與進度走不同路',
+        en: 'Data and progress take different paths',
       },
       body: {
-        zh: '深度 4 時，滿載的 binary pointer 相差 4：rbin=000、wbin=100；轉 Gray 是 000 與 110。一般地，binary 最高 bit 翻轉會讓 Gray 最高兩個 bits 翻轉，其餘相同。所以 full_next 比較 wgray_next 與 {~wq2_rgray[2:1],wq2_rgray[0]}；不是只反相 Gray 最高 bit。',
-        en: 'At depth 4, full binary pointers differ by 4: rbin=000 and wbin=100 map to Gray 000 and 110. Flipping the binary wrap bit flips the top two Gray bits. Thus compare wgray_next with {~wq2_rgray[2:1],wq2_rgray[0]}, not just the top Gray bit.',
+        zh: 'wdata 直接寫進 dual-port memory；跨 clock 的不是 payload，而是已註冊的 Gray pointer。Read side 用同步後進度判斷是否可以讀。',
+        en: 'wdata enters dual-port memory. The crossing signal is not payload data but the registered Gray pointer, which lets the read side decide when reading is safe.',
       },
-    },
-    {
-      title: { zh: '為什麼比較 next？', en: 'Why compare the next pointer?' },
-      body: {
-        zh: '從空 FIFO 連寫四筆、期間沒有 read：第 4 筆 write 在邊緣前仍合法，邊緣後才滿。先用舊 full 決定 fire，再算 binary_next／gray_next，最後註冊 full_next。empty 同理：讀最後一筆後 empty 變 1，但該筆 rdata 仍有效。flag 每個本地邊緣都要重新評估，不能只在 enable=1 時更新。',
-        en: 'Starting empty with no reads, the fourth write is legal before its edge and makes the FIFO full afterward. Use the old flag for fire, compute next pointers, then register the next flag. Likewise the last read sets empty but returns valid rdata. Reevaluate flags on every local edge, even when enable=0.',
-      },
+      visual: 'wdata → memory → rdata   |   wgray → FF1 → FF2',
     },
     {
       title: {
-        zh: '2FF 為什麼不是剛好兩拍旗標就變？',
-        en: 'Why can flag release take three edges?',
+        zh: '為什麼可能等三個 rclk？',
+        en: 'Why can it take three rclk edges?',
       },
       body: {
-        zh: '若 wgray 已穩定為 001：rclk 第 1 拍 FF1=001／FF2=000；第 2 拍 FF2=001，但 empty 比較仍看到舊 FF2=000；第 3 拍才註冊 empty=0。這是 nonblocking assignment 的舊值語意。實體 metastability 可能增加延遲，RTL 不模擬其機率。',
-        en: 'For stable wgray=001: rclk edge 1 updates FF1; edge 2 updates FF2, while the flag logic still sees the old FF2; edge 3 registers empty=0. This follows nonblocking old-value semantics. Hardware metastability may add delay; RTL does not model its probability.',
+        zh: '第 1 拍 FF1 看到新值；第 2 拍 FF2 收到它，但 empty 比較仍讀到 FF2 舊值；第 3 拍 empty 才註冊解除。這是 nonblocking assignment 的舊值語意。',
+        en: 'Edge 1 updates FF1. Edge 2 updates FF2 while empty logic still sees old FF2. Edge 3 finally registers empty low because nonblocking logic reads pre-edge values.',
       },
-    },
-    {
-      title: {
-        zh: 'reset 與真正 CDC 的界線',
-        en: 'Reset and hardware CDC boundary',
-      },
-      body: {
-        zh: '本題使用共同 flush，兩側 pointer 與同步器一起歸零，memory 不必清除。執行中只 reset 一側可能破壞資料關係，不能假設安全。硬體還需來源 Gray 註冊、目的端同步器辨識、bus skew／delay 約束及 reset release 檢查；跑過 simulation 不等於 CDC sign-off。',
-        en: 'This lab coordinates both resets for a flush; clear pointers and synchronizers, not memory. Resetting only one side can destroy data ownership. Hardware also needs registered source Gray, recognized synchronizers, bus skew/delay constraints and reset-release checks. Simulation is not CDC sign-off.',
-      },
+      visual: 'R1: FF1 ✓  →  R2: FF2 ✓  →  R3: empty=0',
     },
   ];
   return (
     <section
       className="logic-brief-card mt-4"
-      aria-label="Async FIFO reasoning"
+      aria-label={zh ? 'Async FIFO 水晶圖解' : 'Async FIFO reasoning'}
     >
       <h3 className="text-sm font-semibold">
-        {locale === 'zh'
-          ? 'Async FIFO 水晶推演：從地址到旗標'
-          : 'Async FIFO reasoning: from addresses to flags'}
+        {zh
+          ? 'Timing 水晶：只推演三件最容易錯的事'
+          : 'Timing crystal: the three common failure points'}
       </h3>
-      <dl className="cpu-concept-guide">
-        {items.map((item) => (
-          <Fragment key={item.title.en}>
-            <dt>{localize(item.title, locale)}</dt>
-            <dd>{localize(item.body, locale)}</dd>
-          </Fragment>
+      <div className="mt-3 grid gap-3 xl:grid-cols-3">
+        {steps.map((item) => (
+          <article
+            key={item.title.en}
+            className="rounded-xl border border-border bg-background p-3"
+          >
+            <h4 className="text-sm font-semibold">
+              {localize(item.title, locale)}
+            </h4>
+            <div className="my-3 overflow-x-auto rounded-lg bg-slate-950 px-3 py-2 text-center font-mono text-xs font-semibold text-cyan-200">
+              {item.visual}
+            </div>
+            <p className="text-xs leading-5 text-muted-foreground">
+              {localize(item.body, locale)}
+            </p>
+          </article>
         ))}
-      </dl>
+      </div>
+      <div className="mt-3 grid gap-2 rounded-xl border border-border bg-muted/20 p-3 text-xs sm:grid-cols-2">
+        <p>
+          <strong>empty_next</strong>
+          <br />
+          <code>r_next_gpointer == rq2_wgray</code>
+        </p>
+        <p>
+          <strong>full_next · depth 4</strong>
+          <br />
+          <code>w_next_gpointer == {'{~wq2_rgray[2:1], wq2_rgray[0]}'}</code>
+        </p>
+      </div>
+      <p className="mt-3 text-xs leading-5 text-muted-foreground">
+        {zh
+          ? '先用舊 full／empty 決定本拍能不能操作，再算 next pointer，最後把 next flag 註冊起來。不要先背公式；先確認每個比較值屬於哪個 clock domain。'
+          : 'Use the old full/empty flag to accept this operation, compute the next pointer, then register the next flag. Before memorizing equations, identify the clock domain of every compared value.'}
+      </p>
     </section>
   );
 }
