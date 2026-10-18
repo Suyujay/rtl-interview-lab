@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { localize, type Locale } from '@/lib/challenges';
 
 const ports = [
@@ -81,28 +80,6 @@ const roleRows = [
   ],
 ] as const;
 
-function ClockBadge({
-  children,
-  tone,
-}: {
-  children: ReactNode;
-  tone: 'comb' | 'write' | 'read';
-}) {
-  const toneClass =
-    tone === 'comb'
-      ? 'border-amber-400/60 bg-amber-500/10 text-amber-800 dark:text-amber-200'
-      : tone === 'write'
-        ? 'border-cyan-400/60 bg-cyan-500/10 text-cyan-800 dark:text-cyan-200'
-        : 'border-purple-400/60 bg-purple-500/10 text-purple-800 dark:text-purple-200';
-  return (
-    <span
-      className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${toneClass}`}
-    >
-      {children}
-    </span>
-  );
-}
-
 export function AsyncFifoGuide({ locale }: { locale: Locale }) {
   const zh = locale === 'zh';
   return (
@@ -121,71 +98,119 @@ export function AsyncFifoGuide({ locale }: { locale: Locale }) {
           : 'The common mistake is treating a wire, source flops, and destination 2FF as the same object. Trace one write pointer into the read domain first.'}
       </p>
 
-      <figure className="mt-3 rounded-xl border border-border bg-muted/20 p-3 sm:p-4">
-        <div className="grid items-stretch gap-2 lg:grid-cols-[1fr_auto_1fr_auto_1fr]">
-          <article className="rounded-lg border border-amber-400/50 bg-background p-3">
-            <ClockBadge tone="comb">
-              {zh ? '組合邏輯 · 無 clock' : 'Combinational · no clock'}
-            </ClockBadge>
-            <code className="mt-3 block text-sm font-semibold">
-              w_next_bpointer
-            </code>
-            <code className="mt-1 block text-sm font-semibold">
-              w_next_gpointer
-            </code>
-            <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              {zh
-                ? 'wire：只算「下一個值」，不記住任何東西。'
-                : 'wire: computes the next value and stores nothing.'}
-            </p>
-          </article>
-          <div
-            className="grid place-items-center text-xl text-muted-foreground max-lg:rotate-90"
-            aria-hidden="true"
-          >
-            →
+      <div className="mt-3 grid gap-3 xl:grid-cols-2">
+        <figure className="min-w-0 rounded-xl border border-border bg-slate-950 p-3 text-slate-100">
+          <h3 className="text-sm font-semibold text-cyan-200">
+            {zh
+              ? '① Next Gray 是 wire，來源 Gray 才是 FF'
+              : '1. Next Gray is a wire; source Gray is a flop'}
+          </h3>
+          <div className="mt-3 overflow-x-auto pb-1">
+            <div className="grid min-w-[610px] grid-cols-[210px_1fr_210px] items-center gap-3">
+              <div className="rounded-2xl border-2 border-slate-500 bg-slate-900 px-4 py-5 text-center">
+                <p className="text-base font-semibold">
+                  {zh ? 'Gray 計算邏輯' : 'Gray calculation'}
+                </p>
+                <p className="mt-1 text-sm text-slate-300">XOR / Shift</p>
+              </div>
+              <div className="text-center">
+                <code className="text-xs font-semibold text-amber-300">
+                  wire w_next_gpointer
+                </code>
+                <div className="mt-2 flex items-center" aria-hidden="true">
+                  <span className="h-0.5 flex-1 bg-slate-400" />
+                  <span className="-ml-2 text-3xl leading-none text-slate-400">
+                    ›
+                  </span>
+                </div>
+              </div>
+              <div>
+                <div className="rounded-2xl border-2 border-cyan-500 bg-cyan-950/40 px-4 py-5 text-center">
+                  <code className="text-base font-semibold">w_gpointer</code>
+                  <p className="mt-1 text-sm text-slate-200">D Flip-Flops</p>
+                </div>
+                <div className="mx-auto h-5 w-0.5 bg-cyan-400" />
+                <p className="text-center font-mono text-xs text-cyan-200">
+                  wclk
+                </p>
+              </div>
+            </div>
           </div>
-          <article className="rounded-lg border border-cyan-400/50 bg-background p-3">
-            <ClockBadge tone="write">wclk</ClockBadge>
-            <code className="mt-3 block text-sm font-semibold">
-              w_bpointer FF
-            </code>
-            <code className="mt-1 block text-sm font-semibold">
-              w_gpointer FF
-            </code>
-            <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              {zh
-                ? 'reg：來源端在 wclk 上升沿正式保存。'
-                : 'reg: source state captured on rising wclk.'}
-            </p>
-          </article>
-          <div
-            className="grid place-items-center text-xl text-muted-foreground max-lg:rotate-90"
-            aria-hidden="true"
-          >
-            →
+          <figcaption className="mt-2 text-xs leading-5 text-slate-300">
+            {zh
+              ? '組合邏輯算出下一個 Gray；wclk 上升沿才把它存進 w_gpointer。'
+              : 'Combinational logic calculates next Gray; rising wclk stores it in w_gpointer.'}
+          </figcaption>
+        </figure>
+
+        <figure className="min-w-0 rounded-xl border border-border bg-slate-950 p-3 text-slate-100">
+          <h3 className="text-sm font-semibold text-purple-200">
+            {zh
+              ? '② 跨過 domain 後的兩顆 FF 才叫 2FF'
+              : '2. The two destination flops form the 2FF synchronizer'}
+          </h3>
+          <div className="mt-3 overflow-x-auto pb-1">
+            <div className="relative grid min-w-[660px] grid-cols-[180px_1fr_180px_1fr_180px] items-center gap-2 rounded-xl border border-slate-700 px-3 pb-4 pt-10">
+              <span className="absolute left-3 top-2 text-xs font-semibold text-cyan-200">
+                Write Domain
+              </span>
+              <span className="absolute left-[31%] top-2 border-l border-dashed border-purple-400 pl-3 text-xs font-semibold text-purple-200">
+                Read Domain
+              </span>
+              <div>
+                <div className="rounded-xl border-2 border-slate-500 bg-slate-900 p-3 text-center">
+                  <code className="text-sm font-semibold">w_gpointer</code>
+                  <p className="mt-1 text-xs">Source FF</p>
+                </div>
+                <p className="mt-2 text-center font-mono text-xs text-cyan-200">
+                  wclk
+                </p>
+              </div>
+              <div className="flex items-center" aria-hidden="true">
+                <span className="h-0.5 flex-1 bg-slate-400" />
+                <span className="-ml-2 text-3xl leading-none text-slate-400">
+                  ›
+                </span>
+              </div>
+              <div>
+                <div className="rounded-xl border-2 border-purple-400 bg-purple-950/30 p-3 text-center">
+                  <code className="text-sm font-semibold">rq1_wgray</code>
+                  <p className="mt-1 text-xs">FF1</p>
+                </div>
+                <p className="mt-2 text-center font-mono text-xs text-purple-200">
+                  rclk
+                </p>
+              </div>
+              <div className="flex items-center" aria-hidden="true">
+                <span className="h-0.5 flex-1 bg-slate-400" />
+                <span className="-ml-2 text-3xl leading-none text-slate-400">
+                  ›
+                </span>
+              </div>
+              <div>
+                <div className="rounded-xl border-2 border-purple-400 bg-purple-950/30 p-3 text-center">
+                  <code className="text-sm font-semibold">rq2_wgray</code>
+                  <p className="mt-1 text-xs">FF2</p>
+                </div>
+                <p className="mt-2 text-center font-mono text-xs text-purple-200">
+                  rclk
+                </p>
+              </div>
+            </div>
           </div>
-          <article className="rounded-lg border border-purple-400/50 bg-background p-3">
-            <ClockBadge tone="read">rclk</ClockBadge>
-            <code className="mt-3 block text-sm font-semibold">
-              rq1_wgray FF1
-            </code>
-            <code className="mt-1 block text-sm font-semibold">
-              rq2_wgray FF2
-            </code>
-            <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              {zh
-                ? '這兩級才叫 2FF Synchronizer。'
-                : 'These two stages are the 2FF synchronizer.'}
-            </p>
-          </article>
-        </div>
-        <figcaption className="mt-3 rounded-lg bg-background px-3 py-2 text-xs leading-5 text-muted-foreground">
-          {zh
-            ? 'ADDR_WIDTH=2 時每個 pointer 是 3 bits：w_gpointer 是 3 個來源 FF；rq1_wgray＋rq2_wgray 是 6 個同步 FF。Read → Write 方向還會有另一組 6 個 FF。'
-            : 'With ADDR_WIDTH=2, each pointer is 3 bits: w_gpointer uses three source flops, while rq1_wgray plus rq2_wgray use six synchronizer flops. Read-to-write needs another six.'}
-        </figcaption>
-      </figure>
+          <figcaption className="mt-2 text-xs leading-5 text-slate-300">
+            {zh
+              ? 'w_gpointer 屬於 Write Domain；rq1_wgray、rq2_wgray 都由 rclk 取樣，只有後兩顆是同步器。'
+              : 'w_gpointer belongs to the write domain. rq1_wgray and rq2_wgray are sampled by rclk; only those two are the synchronizer.'}
+          </figcaption>
+        </figure>
+      </div>
+
+      <p className="mt-3 rounded-lg bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground">
+        {zh
+          ? 'ADDR_WIDTH=2 時，每個 pointer 是 3 bits：w_gpointer 是 3 個來源 FF；rq1_wgray＋rq2_wgray 是 6 個同步 FF。Read → Write 方向還有一組對稱的 2FF。'
+          : 'With ADDR_WIDTH=2, each pointer is 3 bits: w_gpointer uses three source flops; rq1_wgray plus rq2_wgray use six synchronizer flops. Read-to-write has a mirrored 2FF chain.'}
+      </p>
 
       <div className="mt-3 grid gap-3 lg:grid-cols-2">
         <article className="rounded-xl border border-border bg-background p-3">
@@ -225,40 +250,46 @@ rq2_wgray <= rq1_wgray;`}</code>
         </article>
       </div>
 
-      <div className="mt-3 overflow-x-auto rounded-xl border border-border">
-        <table className="w-full min-w-[620px] text-left text-xs">
-          <thead className="bg-muted/60">
-            <tr>
-              <th className="p-2.5">Signal</th>
-              <th className="p-2.5">Verilog</th>
-              <th className="p-2.5">{zh ? '硬體' : 'Hardware'}</th>
-              <th className="p-2.5">{zh ? '角色' : 'Role'}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {roleRows.map(
-              ([signal, kind, zhHardware, enHardware, zhRole, enRole]) => (
-                <tr key={signal} className="border-t border-border">
-                  <td className="p-2.5">
-                    <code>{signal}</code>
-                  </td>
-                  <td className="p-2.5 font-semibold">{kind}</td>
-                  <td className="p-2.5">{zh ? zhHardware : enHardware}</td>
-                  <td className="p-2.5 text-muted-foreground">
-                    {zh ? zhRole : enRole}
-                  </td>
-                </tr>
-              ),
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <p className="mt-2 text-xs leading-5 text-muted-foreground">
-        {zh
-          ? '補充：reg 只是 Verilog 的變數型態，不代表一定是 FF；要看它是否在 always @(posedge ...) 中更新。本題的 pointer 與 synchronizer reg 都在 clock edge 更新，所以才會合成 FF。'
-          : 'Note: reg is a Verilog variable type, not an automatic flip-flop. It becomes a flip-flop here because the pointer and synchronizer registers are updated inside always @(posedge ...).'}
-      </p>
+      <details className="mt-3 rounded-xl border border-border p-3">
+        <summary className="cursor-pointer text-sm font-semibold">
+          {zh
+            ? '需要時再看：wire、reg 與硬體角色表'
+            : 'Open when needed: wire, reg and hardware roles'}
+        </summary>
+        <div className="mt-3 overflow-x-auto rounded-xl border border-border">
+          <table className="w-full min-w-[620px] text-left text-xs">
+            <thead className="bg-muted/60">
+              <tr>
+                <th className="p-2.5">Signal</th>
+                <th className="p-2.5">Verilog</th>
+                <th className="p-2.5">{zh ? '硬體' : 'Hardware'}</th>
+                <th className="p-2.5">{zh ? '角色' : 'Role'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {roleRows.map(
+                ([signal, kind, zhHardware, enHardware, zhRole, enRole]) => (
+                  <tr key={signal} className="border-t border-border">
+                    <td className="p-2.5">
+                      <code>{signal}</code>
+                    </td>
+                    <td className="p-2.5 font-semibold">{kind}</td>
+                    <td className="p-2.5">{zh ? zhHardware : enHardware}</td>
+                    <td className="p-2.5 text-muted-foreground">
+                      {zh ? zhRole : enRole}
+                    </td>
+                  </tr>
+                ),
+              )}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+          {zh
+            ? 'reg 只是 Verilog 的變數型態，不代表一定是 FF；本題這些 reg 在 always @(posedge ...) 中更新，所以才會合成 FF。'
+            : 'reg is a Verilog variable type, not an automatic flip-flop. These registers become flops because they are updated inside always @(posedge ...).'}
+        </p>
+      </details>
 
       <aside className="mt-3 rounded-xl border border-rose-300/60 bg-rose-500/5 p-3 text-sm leading-6">
         <strong>
