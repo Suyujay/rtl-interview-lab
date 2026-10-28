@@ -6,15 +6,12 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://xizhuwang.github.io/rtl-interview-lab/'),
+  metadataBase: new URL('https://suyujay.github.io/rtl-interview-lab/'),
   title: 'SoC RTL Lab | Xi-Zhu Wang',
   description: 'Hands-on bilingual RTL, CDC, timing, verification and PPA practice for SoC engineers.',
-  other: {
-    'google-adsense-account': 'ca-pub-1191948823193656',
-  },
   openGraph: {
     type: 'website',
-    url: 'https://xizhuwang.github.io/rtl-interview-lab/',
+    url: 'https://suyujay.github.io/rtl-interview-lab/',
     title: 'SoC RTL Lab',
     description: 'Hands-on bilingual RTL, CDC, CPU/cache, SoC, DFT and low-power practice.',
     images: [
@@ -30,7 +27,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'SoC RTL Lab',
     description: 'Hands-on bilingual RTL, CDC, CPU/cache, SoC, DFT and low-power practice.',
-    images: ['https://xizhuwang.github.io/rtl-interview-lab/soc-rtl-lab-preview.jpg'],
+    images: ['https://suyujay.github.io/rtl-interview-lab/soc-rtl-lab-preview.jpg'],
   },
 };
 

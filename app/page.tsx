@@ -570,7 +570,8 @@ function createEquipmentInstance(
 // Public collection links/assets may be kept in the client. Never place API
 // credentials or merchant signing secrets in this repository.
 const supportConfig = {
-  paypalUrl: 'https://paypal.me/424242378',
+  // No support URL is configured in this fork; the support card stays hidden.
+  paypalUrl: '',
 };
 const browserStorage = {
   getItem: (key: string) => {
@@ -1715,7 +1716,7 @@ function BusinessCardPreview({
         </div>
       </div>
       <p className="tech-card-link">
-        Explore RTL practice · xizhuwang.github.io/rtl-interview-lab
+        Explore RTL practice · suyujay.github.io/rtl-interview-lab
       </p>
     </div>
   );
@@ -4043,7 +4044,7 @@ export default function Home() {
       context.fillStyle = 'rgba(211, 229, 240, 0.44)';
       context.font = '500 15px Inter, sans-serif';
       context.fillText(
-        'Explore RTL practice · xizhuwang.github.io/rtl-interview-lab',
+        'Explore RTL practice · suyujay.github.io/rtl-interview-lab',
         450,
         632,
       );
@@ -4375,7 +4376,7 @@ export default function Home() {
               nativeButton={false}
               render={
                 <a
-                  href="https://github.com/xizhuwang/rtl-interview-lab"
+                  href="https://github.com/Suyujay/rtl-interview-lab"
                   target="_blank"
                   rel="noreferrer"
                   aria-label={text.source}
@@ -5349,6 +5350,7 @@ export default function Home() {
                             </div>
                           </div>
 
+                          {supportConfig.paypalUrl && (
                           <div className="rounded-xl border border-dashed border-border bg-muted/35 p-4">
                             <div className="flex items-start gap-3">
                               <Gift className="mt-0.5 size-5 shrink-0 text-primary" />
@@ -5397,6 +5399,7 @@ export default function Home() {
                               </div>
                             </div>
                           </div>
+                          )}
                         </div>
                       )}
                       <DialogClose render={<Button className="w-full" />}>
@@ -6447,19 +6450,6 @@ export default function Home() {
             {locale === 'zh'
               ? '題目採用自行撰寫的簡化模型，未附商用 PDK、SRAM IP、標準全文或公司內部資料。結果僅供教學，不等同正式 CDC／STA／APR／Formal signoff；公開測資與本機積分不具防作弊保證。'
               : 'Exercises use independently written simplified models, not commercial PDKs, SRAM IP, full standards or internal company materials. Results are educational, not CDC/STA/APR/formal signoff. Public tests and local scores are not cheat-resistant.'}
-          </p>
-          <p className="mt-2">
-            {locale === 'zh'
-              ? 'PayPal.Me 僅供自願支持；本站不會因付款增加遊戲點數，也不會接觸或保存付款帳戶資料。如需其他贊助管道，歡迎透過作者網站聯絡。付款及個資處理由 PayPal 依其條款負責。'
-              : 'PayPal.Me is a voluntary-support option only. Payments do not grant game points, and this site does not receive or store payment-account data. Contact the author through the portfolio site if you need another support method. PayPal processes payment and personal data under its own terms.'}{' '}
-            <a
-              className="underline"
-              href="https://www.paypal.com/tw/legalhub/privacy-full"
-              target="_blank"
-              rel="noreferrer"
-            >
-              PayPal privacy
-            </a>
           </p>
           <p className="mt-2">
             <a className="underline" href="./THIRD_PARTY_NOTICES.txt">
