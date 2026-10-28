@@ -241,7 +241,7 @@ verify(
     ) &&
     /<BusinessCardPreview/.test(pageSource) &&
     /canvas\.toBlob\(resolve, 'image\/png'/.test(pageSource) &&
-    /xizhuwang\.github\.io\/rtl-interview-lab/.test(pageSource),
+    /suyujay\.github\.io\/rtl-interview-lab/.test(pageSource),
   'Technology business cards keep profile data local and export a branded PNG',
 );
 verify(
