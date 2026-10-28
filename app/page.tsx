@@ -2206,6 +2206,7 @@ export default function Home() {
   const instantJudgeTimer = useRef<number | null>(null);
   const battleReturnTimer = useRef<number | null>(null);
   const runStartedAt = useRef(0);
+  const resultsRef = useRef<HTMLElement>(null);
   const synthStartedAt = useRef(0);
   const storageLoaded = useRef(false);
   const current =
@@ -4302,6 +4303,32 @@ export default function Home() {
       setMascotProfession(profession);
   };
 
+  // Compact verdict shown next to both run buttons: the full report lives in the
+  // results column, which can be far above or below the button on small screens.
+  const resultChip = result ? (
+    <button
+      type="button"
+      onClick={() =>
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
+        result.ok
+          ? 'border-success/30 bg-success/10 text-success'
+          : 'border-destructive/40 bg-destructive/5 text-destructive'
+      }`}
+    >
+      {result.ok ? (
+        <CheckCircle2 className="size-3.5" />
+      ) : (
+        <XCircle className="size-3.5" />
+      )}
+      {result.ok ? text.passed : text.failed}
+      <span className="font-normal opacity-70">
+        {locale === 'zh' ? '查看結果' : 'View results'}
+      </span>
+    </button>
+  ) : null;
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <iframe
@@ -5891,6 +5918,7 @@ export default function Home() {
                       {running ? text.running : text.run}
                     </Button>
                   )}
+                  {resultChip}
                   {current.difficulty === 'advanced' && (
                     <Badge
                       className="border-red-300 bg-red-500/10 text-red-700 dark:border-red-900 dark:text-red-200"
@@ -6140,6 +6168,7 @@ export default function Home() {
                   )}
                   {running ? text.running : text.run}
                 </Button>
+                {resultChip}
               </div>
             </div>
           )}
@@ -6270,7 +6299,10 @@ export default function Home() {
           </details>
         </section>
 
-        <aside className="lab-results border-t border-border bg-card px-4 py-6 sm:px-6 xl:min-h-[calc(100vh-65px)] xl:border-l xl:border-t-0">
+        <aside
+          ref={resultsRef}
+          className="lab-results border-t border-border bg-card px-4 py-6 sm:px-6 xl:sticky xl:top-0 xl:max-h-screen xl:self-start xl:overflow-y-auto xl:min-h-[calc(100vh-65px)] xl:border-l xl:border-t-0"
+        >
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-medium">
               <TerminalSquare className="size-4" />
