@@ -717,6 +717,7 @@ const copy = {
     reset: '重設程式',
     run: '執行測試',
     running: '編譯與測試中…',
+    warmup: '預載編譯器中…',
     waitingBody: '編譯錯誤、失敗原因與執行時間會顯示在這裡。',
     passed: '全部通過',
     passedBody: '本題已完成，分數與本機進度已更新。',
@@ -903,6 +904,7 @@ const copy = {
     reset: 'Reset code',
     run: 'Run tests',
     running: 'Compiling and testing…',
+    warmup: 'Preparing compiler…',
     waitingBody:
       'Compile errors, failures and execution time will appear here.',
     passed: 'All tests passed',
@@ -4305,6 +4307,12 @@ export default function Home() {
 
   // Compact verdict shown next to both run buttons: the full report lives in the
   // results column, which can be far above or below the button on small screens.
+  const engineWarming = current.judge === 'simulation' && !engineReady;
+  const runLabel = running
+    ? text.running
+    : engineWarming
+      ? text.warmup
+      : text.run;
   const resultChip = result ? (
     <button
       type="button"
@@ -5910,12 +5918,12 @@ export default function Home() {
                       }
                       className="mascot-run-button ml-auto"
                     >
-                      {running ? (
+                      {running || engineWarming ? (
                         <LoaderCircle className="animate-spin" />
                       ) : (
                         <Swords />
                       )}
-                      {running ? text.running : text.run}
+                      {runLabel}
                     </Button>
                   )}
                   {resultChip}
@@ -6161,12 +6169,12 @@ export default function Home() {
                     running || (current.judge === 'simulation' && !engineReady)
                   }
                 >
-                  {running ? (
+                  {running || engineWarming ? (
                     <LoaderCircle className="animate-spin" />
                   ) : (
                     <Play />
                   )}
-                  {running ? text.running : text.run}
+                  {runLabel}
                 </Button>
                 {resultChip}
               </div>
