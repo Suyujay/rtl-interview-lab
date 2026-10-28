@@ -39,3 +39,6 @@ next-env.d.ts
 /outputs/
 /work/
 /.engine-cache/
+
+# local-only sites hosting stub (required by vite.config.ts)
+/.openai/
